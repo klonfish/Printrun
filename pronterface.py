@@ -705,7 +705,7 @@ class PronterWindow(wx.Frame,pronsole.pronsole):
             build_dimensions=self.build_dimensions_list,
             grid=(self.settings.preview_grid_step1,self.settings.preview_grid_step2),
             extrusion_width=self.settings.preview_extrusion_width)
-        self.gviz.Bind(wx.EVT_LEFT_DOWN,self.showwin)
+        self.gviz.Bind(wx.EVT_LEFT_DOWN,self.gvizClick)
         self.gwindow.Bind(wx.EVT_CLOSE,lambda x:self.gwindow.Hide())
         vcs=wx.BoxSizer(wx.VERTICAL)
         vcs.Add(self.gviz,1,flag=wx.SHAPED)
@@ -772,10 +772,26 @@ class PronterWindow(wx.Frame,pronsole.pronsole):
             self.do_bedtemp("")
         wx.CallAfter(self.btemp.SetInsertionPoint,0)
 
+    def gvizClick(self, event):
+        # Move printer to the clicked point if Cmd is hold down
+        if event.CmdDown():
+            self.goto_position(event)
+		# Normally show plater window
+        else:
+            self.showwin(event)
+		
     def showwin(self,event):
         if(self.f is not None):
             self.gwindow.Show(True)
             self.gwindow.Raise()
+	
+    def goto_position(self,event):
+		panSize = self.gviz.GetSizeTuple()
+		printSize = self.gviz.build_dimensions
+		(cX, cY) = event.GetPositionTuple()
+		x = (((float)(cX))/panSize[0]) * printSize[0]
+		y = (1 - ((float)(cY))/panSize[1]) * printSize[1]
+		self.stdout.write("Clicked on: %.3fmm, %.3fmm\n" % (x, y))
 
     def setfeeds(self,e):
         self.feedrates_changed = True
